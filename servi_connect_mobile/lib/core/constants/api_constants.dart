@@ -15,6 +15,11 @@ class ApiConstants {
     defaultValue: 'http://localhost:8000/uploads',
   );
 
+  static const String mapboxToken = String.fromEnvironment(
+    'MAPBOX_TOKEN',
+    defaultValue: '',
+  );
+
   // Auth
   static const String register = '/api/auth/register';
   static const String login = '/api/auth/login';

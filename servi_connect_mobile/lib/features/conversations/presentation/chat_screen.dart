@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/message_model.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../providers/message_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -22,34 +23,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // Mock messages for UI demonstration
-  final List<MessageModel> _messages = [
-    MessageModel(
-      id: '1',
-      conversationId: 'c1',
-      senderId: 'other',
-      content: 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-      isMe: false,
-    ),
-    MessageModel(
-      id: '2',
-      conversationId: 'c1',
-      senderId: 'me',
-      content: 'Bonjour, j\'aimerais avoir un devis pour la réparation de ma clim.',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 8)),
-      isMe: true,
-    ),
-    MessageModel(
-      id: '3',
-      conversationId: 'c1',
-      senderId: 'other',
-      content: 'Bien sûr. Pourriez-vous m\'envoyer une photo de l\'unité extérieure ?',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      isMe: false,
-    ),
-  ];
-
   @override
   void dispose() {
     _messageController.dispose();
@@ -60,18 +33,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
 
-    setState(() {
-      _messages.add(
-        MessageModel(
-          id: DateTime.now().toString(),
-          conversationId: widget.conversationId,
-          senderId: 'me',
-          content: _messageController.text.trim(),
-          createdAt: DateTime.now(),
-          isMe: true,
-        ),
-      );
-    });
+    ref.read(messageProvider(widget.conversationId).notifier).sendMessage(
+      _messageController.text.trim(),
+    );
 
     _messageController.clear();
     _scrollToBottom();
@@ -91,6 +55,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final messagesAsync = ref.watch(messageProvider(widget.conversationId));
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
@@ -99,7 +65,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             CircleAvatar(
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
-                widget.participantName[0].toUpperCase(),
+                widget.participantName.isNotEmpty ? widget.participantName[0].toUpperCase() : '?',
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
               ),
             ),
@@ -127,14 +93,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(20),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
+            child: messagesAsync.when(
+              data: (messages) {
+                // Ensure scroll to bottom on new data
+                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(20),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    return _buildMessageBubble(message);
+                  },
+                );
               },
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (error, stack) => Center(child: Text('Erreur: $error')),
             ),
           ),
           _buildMessageInput(),

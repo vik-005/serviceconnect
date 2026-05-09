@@ -76,7 +76,7 @@ class DioClient {
 
   Dio get dio => _dio;
 
-  Future<Map<String, dynamic>> post(
+  Future<dynamic> post(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -86,7 +86,7 @@ class DioClient {
     return response.data;
   }
 
-  Future<Map<String, dynamic>> get(
+  Future<dynamic> get(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/search_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
+import 'widgets/provider_map_view.dart';
+import 'package:latlong2/latlong.dart';
 
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -16,6 +19,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
+  bool _showMap = false;
 
   @override
   void initState() {
@@ -60,6 +64,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(_showMap ? Icons.list : Icons.map, color: AppColors.primary),
+            onPressed: () {
+              setState(() {
+                _showMap = !_showMap;
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
@@ -70,6 +85,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 if (providers.isEmpty) {
                   return _buildEmptyState();
                 }
+
+                if (_showMap) {
+                  return ProviderMapView(
+                    providers: providers,
+                    userLocation: const LatLng(48.8566, 2.3522), // Default to Paris or user's GPS
+                    mapboxToken: ApiConstants.mapboxToken,
+                  );
+                }
+
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: providers.length,

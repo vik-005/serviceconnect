@@ -4,6 +4,10 @@ namespace App\Service;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Google\Auth\Credentials\ServiceAccountCredentials;
+use Google\Auth\Middleware\AuthTokenMiddleware;
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
 
 class FirebaseService
 {
@@ -59,11 +63,22 @@ class FirebaseService
     }
 
     /**
-     * Placeholder for OAuth2 token generation
-     * In a real project, use google/auth library
+     * Génère un jeton OAuth2 valide pour Firebase FCM HTTP v1 API
      */
     private function getAccessToken(): string
     {
-        return $this->params->get('firebase_access_token') ?? 'dummy-token';
+        $credentialsPath = $this->params->get('kernel.project_dir') . '/config/firebase_credentials.json';
+        
+        if (!file_exists($credentialsPath)) {
+            // Repli sur un token factice si le fichier n'existe pas (pour le mode dev sans configuration)
+            return $this->params->get('firebase_access_token') ?? 'dummy-token';
+        }
+
+        $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+        
+        $credentials = new ServiceAccountCredentials($scopes, $credentialsPath);
+        $token = $credentials->fetchAuthToken();
+        
+        return $token['access_token'] ?? 'dummy-token';
     }
 }

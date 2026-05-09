@@ -16,9 +16,9 @@ export const useConversationMessages = (conversationId: number | null | undefine
 
   // Send message mutation
   const sendMutation = useMutation({
-    mutationFn: async ({ content, type = 'text', mediaUrl }: { content: string; type?: string; mediaUrl?: string }) => {
+    mutationFn: async ({ content, type = 'text', file }: { content: string; type?: string; file?: File }) => {
       if (!conversationId) throw new Error('No conversation selected');
-      return sendMessage(conversationId, content, type, mediaUrl);
+      return sendMessage(conversationId, content, type, file);
     },
     onSuccess: (newMessage) => {
       // Update the messages cache optimistically
@@ -34,13 +34,8 @@ export const useConversationMessages = (conversationId: number | null | undefine
     },
   });
 
-  // Upload media mutation
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => uploadMedia(file),
-    onError: (error) => {
-      console.error('Failed to upload media:', error);
-    },
-  });
+  // Upload media mutation (Deprecated, kept for type compatibility but not used)
+  const uploadMutation = { isPending: false };
 
   // Send text message
   const sendTextMessage = useCallback(
@@ -55,18 +50,17 @@ export const useConversationMessages = (conversationId: number | null | undefine
   const sendMediaMessage = useCallback(
     async (file: File, mediaType: 'audio' | 'video' | 'image') => {
       try {
-        const uploaded = await uploadMutation.mutateAsync(file);
-        return sendMutation.mutateAsync({
+        return await sendMutation.mutateAsync({
           content: `Médias: ${mediaType}`,
           type: mediaType,
-          mediaUrl: uploaded.url,
+          file: file,
         });
       } catch (error) {
         console.error('Failed to send media:', error);
         throw error;
       }
     },
-    [sendMutation, uploadMutation]
+    [sendMutation]
   );
 
   return {

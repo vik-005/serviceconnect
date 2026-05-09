@@ -136,18 +136,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final token = await _storage.read(key: 'jwt_token');
       if (token != null) {
-        // Optionnel: On pourrait appeler /api/me pour rafraîchir les infos
-        // Pour l'instant on simule
+        // Appeler /api/me pour valider le token et récupérer le profil actuel
+        final response = await _dio.get('/api/me');
+        
         state = state.copyWith(
           isAuthenticated: true,
           isLoading: false,
+          user: UserModel.fromJson(response), // response est déjà le JSON du user
           token: token,
         );
       } else {
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false);
+      // Si le token est invalide ou expiré, _dio s'occupera d'essayer de le rafraîchir.
+      // S'il échoue, l'intercepteur fera un _logout.
+      state = state.copyWith(isLoading: false, isAuthenticated: false);
     }
   }
 }
