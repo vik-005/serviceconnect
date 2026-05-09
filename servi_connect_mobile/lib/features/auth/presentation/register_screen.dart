@@ -231,7 +231,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: authState.isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
-                              'S\\'inscrire maintenant',
+                              "S'inscrire maintenant",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
@@ -458,7 +458,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               isExpanded: true,
               items: const [
                 DropdownMenuItem(value: 'BJ', child: Text('Bénin')),
-                DropdownMenuItem(value: 'CI', child: Text('Côte d\\'Ivoire')),
+                DropdownMenuItem(value: 'CI', child: Text("Côte d'Ivoire")),
                 DropdownMenuItem(value: 'FR', child: Text('France')),
                 DropdownMenuItem(value: 'TG', child: Text('Togo')),
                 DropdownMenuItem(value: 'NG', child: Text('Nigéria')),
