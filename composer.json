@@ -1,0 +1,9 @@
+{
+    "require": {
+        "lexik/jwt-authentication-bundle": "*",
+        "symfony/mercure-bundle": "*",
+        "vich/uploader-bundle": "*",
+        "nelmio/cors-bundle": "*",
+        "nelmio/api-doc-bundle": "*"
+    }
+}

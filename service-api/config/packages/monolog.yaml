@@ -1,0 +1,18 @@
+monolog:
+    channels: ['api_channel']
+    handlers:
+        main:
+            type: stream
+            path: "%kernel.logs_dir%/%kernel.environment%.log"
+            level: error
+            channels: ["!api_channel"]
+        api:
+            type: stream
+            path: "%kernel.logs_dir%/api.log"
+            level: info
+            channels: ["api_channel"]
+        console:
+            type: console
+            process_psr_3_messages: false
+            channels: ["!api_channel"]
+

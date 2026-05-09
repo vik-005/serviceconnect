@@ -1,0 +1,6 @@
+framework:
+    serializer:
+        enable_attributes: true
+        default_context:
+            enable_max_depth: true
+            json_encode_options: !php/const JSON_UNESCAPED_UNICODE
