@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -29,7 +31,7 @@ interface Errors {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register: mutateRegister, isRegistering } = useAuth();
+  const { registerAsync, isRegistering } = useAuth();
   
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -98,7 +100,7 @@ export default function RegisterPage() {
     if (!validateForm()) return;
 
     try {
-      await mutateRegister({
+      await registerAsync({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -108,16 +110,19 @@ export default function RegisterPage() {
         country: formData.country,
       });
       
-      router.push('/dashboard');
+      router.push('/login?registered=true');
     } catch (error: any) {
       console.error('Registration error:', error);
       
-      if (error?.message?.includes('email')) {
+      const apiErrors = error?.response?.data?.errors;
+      const message = error?.response?.data?.message || error?.message;
+
+      if (message?.toLowerCase().includes('email') || apiErrors?.email) {
         setErrors({ email: 'Cet email est déjà utilisé' });
-      } else if (error?.errors) {
-        setErrors(error.errors);
+      } else if (apiErrors) {
+        setErrors(apiErrors);
       } else {
-        setErrors({ general: error?.message || "Erreur lors de l'inscription. Veuillez réessayer." });
+        setErrors({ general: message || "Erreur lors de l'inscription. Veuillez réessayer." });
       }
     }
   };

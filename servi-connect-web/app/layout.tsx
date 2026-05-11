@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="h-full">
-      <body className={`${inter.className} h-full bg-white flex flex-col`}>
+      <body className={`${inter.className} h-full bg-white flex flex-col`} suppressHydrationWarning>
         <Providers>
           <PageAnimatePresence>
             {children}

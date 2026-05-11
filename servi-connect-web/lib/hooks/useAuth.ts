@@ -24,7 +24,7 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: authApi.register,
     onSuccess: () => {
-      router.push('/login');
+      // Les composants gèrent la redirection
     },
   });
 
@@ -38,8 +38,10 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     login: loginMutation.mutate,
+    loginAsync: loginMutation.mutateAsync,
     isLoggingIn: loginMutation.isPending,
     register: registerMutation.mutate,
+    registerAsync: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     logout: logoutAction,
   };
