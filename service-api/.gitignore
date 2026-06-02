@@ -11,9 +11,26 @@
 
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
+/config/jwt/private.pem
+/config/jwt/public.pem
 ###< lexik/jwt-authentication-bundle ###
 
 ###> phpunit/phpunit ###
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+# Fichiers sensibles - NE JAMAIS committer
+.env.local
+.env.prod
+server.log
+*.log
+
+# Uploads utilisateurs (médias)
+/public/uploads/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

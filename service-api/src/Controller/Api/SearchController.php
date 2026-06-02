@@ -108,6 +108,7 @@ class SearchController extends AbstractController
                 'limit' => $limit
             ]
         ]);
+    }
 
     #[Route('/categories', name: 'api_categories_list', methods: ['GET'])]
     public function categories(): JsonResponse
