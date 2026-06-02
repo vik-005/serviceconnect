@@ -65,4 +65,42 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Find paginated users with provider profile to prevent N+1 queries.
+     */
+    public function findPaginatedUsers(int $page = 1, int $limit = 10, ?string $role = null): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->leftJoin('u.providerProfile', 'pp')
+            ->addSelect('pp')
+            ->where('u.deletedAt IS NULL')
+            ->orderBy('u.createdAt', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        if ($role) {
+            $qb->andWhere('u.role = :role')
+               ->setParameter('role', $role);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Count total users for pagination.
+     */
+    public function countUsers(?string $role = null): int
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.deletedAt IS NULL');
+
+        if ($role) {
+            $qb->andWhere('u.role = :role')
+               ->setParameter('role', $role);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }

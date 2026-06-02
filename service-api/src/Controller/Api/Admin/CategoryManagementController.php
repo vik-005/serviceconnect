@@ -6,6 +6,7 @@ use App\Entity\ServiceCategory;
 use App\Repository\ServiceCategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -22,26 +23,38 @@ class CategoryManagementController extends AbstractController
     ) {}
 
     #[Route('', name: 'api_admin_categories_list', methods: ['GET'])]
-    public function list(): array
+    public function list(): JsonResponse
     {
         $categories = $this->categoryRepository->findAll();
 
-        return array_map(fn($c) => [
+        $data = array_map(fn($c) => [
             'id' => $c->getId(),
             'name' => $c->getName(),
             'slug' => $c->getSlug(),
             'iconUrl' => $c->getIconUrl(),
             'displayOrder' => $c->getDisplayOrder(),
             'isActive' => $c->isActive(),
-            'createdAt' => $c->getCreatedAt(),
+            'createdAt' => $c->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ], $categories);
+
+        return new JsonResponse([
+            'success' => true,
+            'data' => $data
+        ]);
     }
 
     #[Route('', name: 'api_admin_categories_create', methods: ['POST'])]
-    public function create(Request $request): array
+    public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         
+        if (empty($data['name'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Le nom de la catégorie est requis'
+            ], 400);
+        }
+
         $category = new ServiceCategory();
         $category->setName($data['name']);
         $category->setSlug(strtolower($this->slugger->slug($data['name'])));
@@ -52,11 +65,19 @@ class CategoryManagementController extends AbstractController
         $this->entityManager->persist($category);
         $this->entityManager->flush();
 
-        return ['id' => $category->getId(), 'message' => 'Catégorie créée'];
+        return new JsonResponse([
+            'success' => true,
+            'data' => [
+                'id' => $category->getId(),
+                'name' => $category->getName(),
+                'slug' => $category->getSlug()
+            ],
+            'message' => 'Catégorie créée avec succès'
+        ], 201);
     }
 
     #[Route('/{id}', name: 'api_admin_categories_update', methods: ['PUT'])]
-    public function update(ServiceCategory $category, Request $request): array
+    public function update(ServiceCategory $category, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         
@@ -70,20 +91,31 @@ class CategoryManagementController extends AbstractController
 
         $this->entityManager->flush();
 
-        return ['id' => $category->getId(), 'message' => 'Catégorie mise à jour'];
+        return new JsonResponse([
+            'success' => true,
+            'data' => [
+                'id' => $category->getId(),
+                'name' => $category->getName(),
+                'slug' => $category->getSlug()
+            ],
+            'message' => 'Catégorie mise à jour avec succès'
+        ]);
     }
 
     #[Route('/{id}', name: 'api_admin_categories_delete', methods: ['DELETE'])]
-    public function delete(ServiceCategory $category): array
+    public function delete(ServiceCategory $category): JsonResponse
     {
         $this->entityManager->remove($category);
         $this->entityManager->flush();
 
-        return ['message' => 'Catégorie supprimée'];
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Catégorie supprimée avec succès'
+        ]);
     }
 
     #[Route('/reorder', name: 'api_admin_categories_reorder', methods: ['POST'])]
-    public function reorder(Request $request): array
+    public function reorder(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $orders = $data['orders'] ?? [];
@@ -97,8 +129,9 @@ class CategoryManagementController extends AbstractController
 
         $this->entityManager->flush();
 
-        return ['message' => 'Ordre mis à jour'];
-        
-        
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Ordre des catégories mis à jour avec succès'
+        ]);
     }
 }
