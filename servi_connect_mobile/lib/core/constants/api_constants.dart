@@ -2,17 +2,17 @@ class ApiConstants {
   // API Base URLs - Use environment variables or defaults
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000',
+    defaultValue: 'https://web.motiriispace.com',
   );
 
   static const String mercureUrl = String.fromEnvironment(
     'MERCURE_URL',
-    defaultValue: 'http://localhost:3000/.well-known/mercure',
+    defaultValue: 'https://web.motiriispace.com/.well-known/mercure',
   );
 
   static const String uploadsUrl = String.fromEnvironment(
     'UPLOADS_BASE_URL',
-    defaultValue: 'http://localhost:8000/uploads',
+    defaultValue: 'https://web.motiriispace.com/uploads',
   );
 
   static const String mapboxToken = String.fromEnvironment(
