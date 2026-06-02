@@ -1,33 +1,35 @@
+'use client';
+
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { login } from '@/lib/api/auth';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const searchParams = useSearchParams();
+  const isRegistered = searchParams.get('registered') === 'true';
+  const { loginAsync, isLoggingIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<any>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    setLoading(true);
 
     try {
-      const result = await login(formData);
-      setUser(result.user);
-      router.push('/dashboard');
+      await loginAsync(formData);
+      // Redirection is handled in useAuth onSuccess
     } catch (error: any) {
-      setErrors(error.response?.data?.errors || { general: 'Erreur de connexion' });
-    } finally {
-      setLoading(false);
+      console.error('Login error:', error);
+      const apiErrors = error.response?.data?.errors;
+      const message = error.response?.data?.message || error.message;
+      
+      setErrors(apiErrors || { general: message || 'Erreur de connexion' });
     }
   };
 
@@ -38,6 +40,11 @@ export default function LoginPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Connexion
           </h2>
+          {isRegistered && (
+            <p className="mt-2 text-center text-sm font-medium text-green-600 bg-green-50 p-3 rounded-xl border border-green-100">
+              Inscription réussie ! Vous pouvez maintenant vous connecter.
+            </p>
+          )}
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
@@ -56,7 +63,7 @@ export default function LoginPage() {
             error={errors.password}
             required
           />
-          <Button type="submit" loading={loading} fullWidth className="h-12 text-lg">
+          <Button type="submit" isLoading={isLoggingIn} className="h-12 text-lg w-full">
             Se connecter
           </Button>
           {errors.general && (

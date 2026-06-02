@@ -22,7 +22,14 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Si la réponse est déjà au format {success: true, data: ...}, on extrait le data
+    const res = response.data;
+    if (res && res.success === true && res.hasOwnProperty('data') && res.hasOwnProperty('message')) {
+      return { ...response, data: res.data };
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     

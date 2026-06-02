@@ -1,0 +1,226 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ServiConnect API - Documentation & Status{% endblock %}
+
+{% block body %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --secondary: #06b6d4;
+        --dark: #0f172a;
+        --light: #f8fafc;
+        --glass: rgba(255, 255, 255, 0.8);
+    }
+
+    body {
+        background: radial-gradient(circle at top right, #f1f5f9 0%, #ffffff 100%);
+        color: var(--dark);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero {
+        padding: 6rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -10%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: var(--primary);
+        filter: blur(150px);
+        opacity: 0.1;
+        z-index: -1;
+        border-radius: 50%;
+    }
+
+    .badge {
+        background: #ecfdf5;
+        color: #059669;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #d1fae5;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    h1 {
+        font-size: 4rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to bottom right, var(--dark), var(--primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    p.lead {
+        font-size: 1.25rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto 3rem;
+        line-height: 1.6;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .card {
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 2.5rem;
+        border-radius: 2rem;
+        text-align: left;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.1);
+        border-color: rgba(79, 70, 229, 0.2);
+    }
+
+    .card-icon {
+        width: 3rem;
+        height: 3rem;
+        background: #eef2ff;
+        color: var(--primary);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+    }
+
+    .card h3 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+    }
+
+    .card p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: var(--dark);
+        color: white;
+        text-decoration: none;
+        border-radius: 1rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        gap: 0.75rem;
+    }
+
+    .btn:hover {
+        background: var(--primary);
+        transform: scale(1.02);
+    }
+
+    footer {
+        margin-top: auto;
+        padding: 4rem 2rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.875rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="hero">
+    <div class="badge">
+        <div class="dot"></div>
+        API Online - Version 1.0.0
+    </div>
+    <h1>ServiConnect <span style="color: var(--primary)">Engine</span></h1>
+    <p class="lead">Le moteur robuste derrière la plateforme de mise en relation de services au Bénin.</p>
+    
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/api/doc" class="btn">
+            📚 Explorer la Documentation
+        </a>
+        <a href="/api/health" class="btn" style="background: white; color: var(--dark); border: 1px solid #e2e8f0;">
+            ⚡ Status Système
+        </a>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <div class="card-icon">🔐</div>
+        <h3>Authentification JWT</h3>
+        <p>Sécurisation des échanges via JSON Web Tokens. Protégez vos routes avec le rôle approprié.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">💬</div>
+        <h3>Temps Réel</h3>
+        <p>Intégration native avec Mercure Hub pour les notifications et le chat instantané.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">📂</div>
+        <h3>Gestion Asset</h3>
+        <p>Service d'upload optimisé pour les images de profils, bannières et portfolios.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Analytics</h3>
+        <p>Points de terminaison dédiés pour le suivi des performances et statistiques d'activité.</p>
+    </div>
+</div>
+
+<footer>
+    &copy; {{ "now"|date("Y") }} ServiConnect API. Développé avec ❤️ pour l'excellence du service.
+</footer>
+{% endblock %}
