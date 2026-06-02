@@ -231,8 +231,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 12),
                   _buildInfoCard([
                     _buildInfoRow(Icons.email_outlined, 'Adresse Email', user.email),
-                    _buildInfoRow(Icons.phone_outlined, 'Téléphone', user.phone),
-                    _buildInfoRow(Icons.location_on_outlined, 'Pays', user.country),
+                    _buildInfoRow(Icons.phone_outlined, 'Téléphone', user.phone ?? 'Non renseigné'),
+                    _buildInfoRow(Icons.location_on_outlined, 'Pays', user.country ?? 'Non renseigné'),
                   ]),
 
                   const SizedBox(height: 32),
