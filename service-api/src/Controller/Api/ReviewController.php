@@ -8,6 +8,7 @@ use App\Repository\ProviderProfileRepository;
 use App\Service\RatingService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -16,22 +17,31 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class ReviewController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private EntityManagerInterface    $entityManager,
         private ProviderProfileRepository $providerProfileRepository,
-        private RatingService $ratingService
+        private RatingService             $ratingService
     ) {}
 
     #[Route('', name: 'api_reviews_create', methods: ['POST'])]
     #[IsGranted('ROLE_CLIENT')]
-    public function create(Request $request): array
+    public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        /** @var User $user */
-        $user = $this->getUser();
 
+        if (empty($data['providerId'])) {
+            return $this->json(['success' => false, 'message' => 'providerId est obligatoire'], 400);
+        }
+
+        if (!isset($data['rating']) || $data['rating'] < 1 || $data['rating'] > 5) {
+            return $this->json(['success' => false, 'message' => 'La note doit être entre 1 et 5'], 400);
+        }
+
+        /** @var User $user */
+        $user            = $this->getUser();
         $providerProfile = $this->providerProfileRepository->find($data['providerId']);
+
         if (!$providerProfile) {
-            throw $this->createNotFoundException('Prestataire non trouvé');
+            return $this->json(['success' => false, 'message' => 'Prestataire non trouvé'], 404);
         }
 
         $review = new Review();
@@ -45,11 +55,11 @@ class ReviewController extends AbstractController
 
         $this->ratingService->recalculateAverage($providerProfile);
 
-        return [
-            'id' => $review->getId(),
-            'rating' => $review->getRating(),
-            'comment' => $review->getComment(),
-            'createdAt' => $review->getCreatedAt()
-        ];
+        return $this->json([
+            'id'        => $review->getId(),
+            'rating'    => $review->getRating(),
+            'comment'   => $review->getComment(),
+            'createdAt' => $review->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+        ], 201);
     }
 }

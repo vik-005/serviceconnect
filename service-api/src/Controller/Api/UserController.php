@@ -38,13 +38,43 @@ class UserController extends AbstractController
             'city'        => $user->getCity(),
             'country'     => $user->getCountry(),
             'isActive'    => $user->isActive(),
+            'isOnline'    => $user->isOnline(),
+            'lastSeenAt'  => $user->getLastSeenAt()?->format(\DateTimeInterface::ATOM),
             'providerProfile' => $user->getProviderProfile() ? [
+                'id'            => $user->getProviderProfile()->getId(),
                 'bio'           => $user->getProviderProfile()->getBio(),
                 'status'        => $user->getProviderProfile()->getStatus(),
                 'ratingAverage' => $user->getProviderProfile()->getRatingAverage(),
+                'totalReviews'  => $user->getProviderProfile()->getTotalReviews(),
                 'isVerified'    => $user->getProviderProfile()->isVerified(),
+                'yearsExperience' => $user->getProviderProfile()->getYearsExperience(),
             ] : null,
         ]);
+    }
+
+    #[Route('', name: 'api_me_update', methods: ['PATCH'])]
+    public function update(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (isset($data['firstName']) && trim($data['firstName']) !== '') {
+            $user->setFirstName(trim($data['firstName']));
+        }
+        if (isset($data['lastName']) && trim($data['lastName']) !== '') {
+            $user->setLastName(trim($data['lastName']));
+        }
+        if (array_key_exists('phone', $data)) {
+            $user->setPhone($data['phone'] ?: null);
+        }
+        if (array_key_exists('city', $data)) {
+            $user->setCity($data['city'] ?: null);
+        }
+
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true, 'message' => 'Profil mis à jour']);
     }
 
     #[Route('/location', name: 'api_me_location', methods: ['PATCH'])]
@@ -115,5 +145,27 @@ class UserController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(['success' => true, 'isOnline' => $user->isOnline()]);
+    }
+
+    #[Route('', name: 'api_me_delete', methods: ['DELETE'])]
+    public function deleteAccount(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        
+        // Soft delete user and deactivate
+        $user->setDeletedAt(new \DateTimeImmutable());
+        $user->setIsActive(false);
+        $user->setIsOnline(false);
+        
+        $profile = $user->getProviderProfile();
+        if ($profile) {
+            $profile->setDeletedAt(new \DateTimeImmutable());
+            $profile->setStatus('inactive');
+        }
+        
+        $this->entityManager->flush();
+        
+        return $this->json(['success' => true, 'message' => 'Compte supprimé avec succès. Nous regrettons de vous voir partir !']);
     }
 }

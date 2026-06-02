@@ -7,7 +7,7 @@ use App\Entity\Conversation;
 use App\Entity\User;
 use App\Service\ConversationService;
 use App\Service\MediaUploadService;
-use App\Service\MercureService;
+use App\Service\MercurePublisher;
 use App\Repository\MessageRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,20 +23,27 @@ class MessageController extends AbstractController
         private ConversationService $conversationService,
         private MessageRepository   $messageRepository,
         private MediaUploadService  $mediaUploadService,
-        private MercureService      $mercureService
+        private MercurePublisher    $mercurePublisher
     ) {}
 
     #[Route('', name: 'api_messages_list', methods: ['GET'])]
-    public function list(Conversation $conversation): JsonResponse
+    public function list(Conversation $conversation, Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
         $this->denyAccessUnlessConversationMember($conversation, $user);
 
-        $messages = $this->messageRepository->findBy(
-            ['conversation' => $conversation, 'deletedAt' => null],
-            ['createdAt' => 'ASC']
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 50);
+
+        $messages = $this->messageRepository->findByConversationPaginated(
+            (string) $conversation->getId(),
+            $page,
+            $limit
         );
+
+        // Sort messages back to ASC for the UI (chat view usually needs chronological order)
+        usort($messages, fn($a, $b) => $a->getCreatedAt() <=> $b->getCreatedAt());
 
         return $this->json($messages, 200, [], ['groups' => ['msg:read']]);
     }
@@ -51,33 +58,36 @@ class MessageController extends AbstractController
         $type    = $request->request->get('type', 'text');
         $content = $request->request->get('content');
 
+        // Gestion du média uploadé
         if (in_array($type, ['image', 'video', 'audio'], true)) {
             $file = $request->files->get('media');
             if ($file) {
-                $content = $this->mediaUploadService->upload($file, 'messages/' . $type);
+                // On stocke l'URL du fichier comme mediaUrl, pas comme content
+                $mediaUrl = $this->mediaUploadService->upload($file, 'messages/' . $type);
+                $dto          = new SendMessageDto();
+                $dto->content = $content;
+                $dto->type    = $type;
+                $dto->mediaUrl = $mediaUrl;
+            } else {
+                return $this->json(['success' => false, 'message' => 'Fichier média manquant'], 400);
             }
+        } else {
+            if (empty($content)) {
+                return $this->json(['success' => false, 'message' => 'Le contenu du message est obligatoire'], 400);
+            }
+            $dto          = new SendMessageDto();
+            $dto->content = $content;
+            $dto->type    = $type;
         }
 
-        $dto          = new SendMessageDto();
-        $dto->content = $content;
-        $dto->type    = $type;
-
+        // ConversationService::sendMessage() gère BDD + Mercure (publish unique)
         $message = $this->conversationService->sendMessage($conversation, $user, $dto);
-
-        // Publish to Mercure for real-time
-        $this->mercureService->publishMessage((string) $conversation->getId(), [
-            'id'         => (string) $message->getId(),
-            'content'    => $message->getContent(),
-            'type'       => $message->getType(),
-            'senderId'   => (string) $user->getId(),
-            'senderName' => "{$user->getFirstName()} {$user->getLastName()}",
-            'createdAt'  => $message->getCreatedAt()?->format(\DateTimeInterface::ATOM),
-        ]);
 
         return $this->json([
             'id'        => (string) $message->getId(),
             'content'   => $message->getContent(),
             'type'      => $message->getType(),
+            'mediaUrl'  => $message->getMediaUrl(),
             'createdAt' => $message->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ], 201);
     }
@@ -103,20 +113,18 @@ class MessageController extends AbstractController
 
         $message = $this->messageRepository->find($messageId);
         if (!$message || $message->getConversation() !== $conversation) {
-            throw $this->createNotFoundException('Message non trouvé');
+            return $this->json(['success' => false, 'message' => 'Message non trouvé'], 404);
         }
 
-        // Only sender can delete their message (like WhatsApp "Delete for everyone" logic can be added later)
-        // For now, let's allow sender to delete.
         if ($message->getSender() !== $user) {
-            throw $this->createAccessDeniedException('Vous ne pouvez supprimer que vos propres messages');
+            return $this->json(['success' => false, 'message' => 'Vous ne pouvez supprimer que vos propres messages'], 403);
         }
 
         $message->delete();
         $this->messageRepository->save($message, true);
 
-        // Notify via Mercure that message was deleted
-        $this->mercureService->publishMessage((string) $conversation->getId(), [
+        // Notifier via Mercure que le message a été supprimé
+        $this->mercurePublisher->publish("/conversations/{$conversation->getId()}", [
             'type'      => 'message_deleted',
             'messageId' => (string) $message->getId(),
         ]);
@@ -124,7 +132,7 @@ class MessageController extends AbstractController
         return $this->json(['success' => true, 'message' => 'Message supprimé']);
     }
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     private function denyAccessUnlessConversationMember(Conversation $conversation, User $user): void
     {
         $isClient   = $conversation->getClient() === $user;

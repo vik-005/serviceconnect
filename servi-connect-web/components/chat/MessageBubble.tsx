@@ -1,9 +1,87 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Message } from '../../lib/types/message';
 import { format } from 'date-fns';
 import { CheckCheck, Phone, FileIcon, Play, Pause } from 'lucide-react';
+
+const AudioPlayer: React.FC<{ url?: string; isMine: boolean }> = ({ url, isMine }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    
+    const audio = audioRef.current;
+    const updateProgress = () => {
+      setProgress((audio.currentTime / audio.duration) * 100 || 0);
+    };
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration || 0);
+    };
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [url]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  return (
+    <div className={`flex items-center space-x-3 p-2 rounded-xl min-w-[220px] ${
+      isMine ? 'bg-blue-700/50 text-white' : 'bg-slate-100 text-slate-800'
+    }`}>
+      <audio ref={audioRef} src={url} preload="metadata" className="hidden" />
+      <button 
+        onClick={togglePlay}
+        className={`p-2 rounded-full flex items-center justify-center transition-all ${
+          isMine ? 'bg-white text-blue-600 hover:scale-105' : 'bg-blue-600 text-white hover:scale-105'
+        }`}
+      >
+        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} className="ml-0.5" fill="currentColor" />}
+      </button>
+      <div className="flex-1 flex flex-col justify-center">
+        <div className={`h-1 rounded-full overflow-hidden w-full ${isMine ? 'bg-white/20' : 'bg-slate-200'}`}>
+          <div 
+            className={`h-full transition-all duration-100 ${isMine ? 'bg-white' : 'bg-blue-600'}`} 
+            style={{ width: `${progress}%` }} 
+          />
+        </div>
+        <div className="flex justify-between items-center mt-1 text-[9px] opacity-75 font-semibold">
+          <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,17 +100,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine }) => {
           />
         );
       case 'audio':
-        return (
-          <div className="flex items-center space-x-3 bg-white/10 p-2 rounded-lg min-w-[200px]">
-            <button className="p-2 bg-blue-500 rounded-full text-white">
-              <Play size={16} fill="white" />
-            </button>
-            <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white w-1/3" />
-            </div>
-            <span className="text-[10px] opacity-70">0:12</span>
-          </div>
-        );
+        return <AudioPlayer url={message.mediaUrl} isMine={isMine} />;
       case 'video':
         return (
           <div className="relative rounded-xl overflow-hidden max-w-xs group">

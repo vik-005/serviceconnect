@@ -1,33 +1,31 @@
-# ServiConnect Production Finalization TODO
+# TODO - Communication Backend Symfony (JWT) <-> Frontend Next.js (CORS)
 
-## Current Progress
-- [x] Analyzed project structure and existing RefreshToken implementation
+## Étape 1 — Audit & correctifs CORS + headers
+- [ ] Lire/valider la config `service-api/config/packages/nelmio_cors.yaml`
+- [ ] Vérifier `.env` via le code (ne pas lire directement les fichiers .env si interdit) : `CORS_ALLOW_ORIGIN`, éventuel `CORS_ALLOW_CREDENTIALS`
+- [ ] Forcer les réponses OPTIONS preflight pour `/api/**` et headers `Authorization`
 
-## Plan Steps (Step 1: RefreshToken System)
-1. [x] Create RefreshTokenService.php ✅
-2. [x] Update RefreshToken Entity + create migration for isRevoked ✅ (run `cd service-api && bin/console make:migration && bin/console doctrine:migrations:migrate`)
-3. [x] Refactor AuthService to use service + real JWT + revoke logic
-4. [x] Add logout endpoint in AuthController ✅
-5. Test auth flow
+## Étape 2 — Fix JWT / refresh token contract
+- [ ] Vérifier la forme JSON attendue par `AuthController::refresh` (clé `refresh_token`)
+- [ ] Corriger `servi-connect-web/lib/api/axios.ts` pour éviter bugs: double requête, retry incorrect, race conditions
+- [ ] Ajouter une protection contre le refresh concurrent (single-flight) et empêcher les boucles
 
-## Step 2: Global Exception Handler
-- [x] Created ApiExceptionListener.php
-## Step 3: Serializer
-- [x] Created serializer.yaml ✅
-- [ ] Entity Groups + DTO mappers
+## Étape 3 — Routes sécurisées et “Authorization Bearer”
+- [ ] Ajouter un mécanisme “/api/me” sécurisé (ou aligner avec existant)
+- [ ] Valider security.yaml + roles (USER/ADMIN)
 
-## Step 4: Security Headers
-- [x] Created SecurityHeadersListener.php ✅
+## Étape 4 — Mercure (SSE/EventSource)
+- [ ] Vérifier `MERCURE_PUBLIC_URL` et clés Mercure dans `service-api/config/packages/mercure.yaml`
+- [ ] Ajouter côté frontend EventSource avec token (JWT Mercure si nécessaire)
 
-## Step 5: Docker
-- [x] Dockerfile, docker-compose.yml, nginx.conf ✅
-**docker compose up -d**
+## Étape 5 — CRUD exemple sécurisé (pro)
+- [ ] Créer une Entity Doctrine (ex: `Post`)
+- [ ] Générer migration
+- [ ] CRUD endpoint protégé via controller
+- [ ] Consommation côté Next.js
 
-## Step 6: Logs & Monitoring
-...
+## Étape 6 — Production-ready
+- [ ] Ajouter scripts / commandes de démarrage et variables dev/prod
+- [ ] Ajouter checklist sécurité (CSP, rate-limiter, logs)
 
-**Backend ready for production! Next: Tests + Frontend.**
-
-
-**Next: User approval for plan before edits.**
 

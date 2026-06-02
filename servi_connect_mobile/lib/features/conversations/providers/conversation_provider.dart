@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
@@ -49,25 +48,36 @@ final conversationsProvider = StateNotifierProvider<ConversationsNotifier,
 
 class ConversationsNotifier
     extends StateNotifier<AsyncValue<List<Conversation>>> {
+  // ✅ FIX: DioClient instancié une seule fois comme champ de classe
+  final _dioClient = DioClient();
+
   ConversationsNotifier() : super(const AsyncValue.loading()) {
     _loadConversations();
   }
 
   Future<void> _loadConversations() async {
     try {
-      final dioClient = DioClient();
-      final response = await dioClient.get(ApiConstants.conversations);
+      final response = await _dioClient.get(ApiConstants.conversations);
 
-      if (response['data'] != null) {
+      // ✅ FIX CRITIQUE: L'API Symfony retourne directement un tableau [],
+      // pas un objet {data: []}. On gère les deux cas pour être robuste.
+      if (response is List) {
+        final conversations = (response as List)
+            .map((json) => Conversation.fromJson(json as Map<String, dynamic>))
+            .toList();
+        state = AsyncValue.data(conversations);
+      } else if (response is Map && response['data'] != null) {
+        // Fallback si l'API wrappait dans {data: []}
         final conversations = (response['data'] as List)
-            .map((json) => Conversation.fromJson(json))
+            .map((json) => Conversation.fromJson(json as Map<String, dynamic>))
             .toList();
         state = AsyncValue.data(conversations);
       } else {
         state = const AsyncValue.data([]);
       }
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+    } catch (e, stack) {
+      // ✅ FIX: Propager l'erreur avec la stack trace complète
+      state = AsyncValue.error(e, stack);
     }
   }
 

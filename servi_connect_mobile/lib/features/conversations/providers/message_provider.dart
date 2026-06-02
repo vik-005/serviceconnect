@@ -23,29 +23,33 @@ class MessageNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
   Future<void> loadMessages() async {
     try {
       final response = await _dioClient.get('${ApiConstants.conversations}/$conversationId/messages');
-      
+
       if (response is List) {
         final messages = response.map((m) => MessageModel.fromJson(m, currentUserId)).toList();
         state = AsyncValue.data(messages);
       } else {
         state = const AsyncValue.data([]);
       }
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+    } catch (e, stack) {
+      // ✅ FIX: Propager l'erreur pour que l'UI puisse l'afficher
+      state = AsyncValue.error(e, stack);
     }
   }
 
   Future<void> sendMessage(String content, {String type = 'text', File? media}) async {
+    // ✅ FIX: Sauvegarder l'état précédent AVANT de tenter l'envoi
+    final previousState = state;
+
     try {
-      final previousState = state.value ?? [];
-      
-      // Envoi API
       dynamic data;
       if (media != null) {
         data = FormData.fromMap({
           'content': content,
           'type': type,
-          'media': await MultipartFile.fromFile(media.path),
+          'media': await MultipartFile.fromFile(
+            media.path,
+            filename: media.path.split('/').last,
+          ),
         });
       } else {
         data = FormData.fromMap({
@@ -60,9 +64,19 @@ class MessageNotifier extends StateNotifier<AsyncValue<List<MessageModel>>> {
       );
 
       final newMessage = MessageModel.fromJson(response, currentUserId);
-      state = AsyncValue.data([...previousState, newMessage]);
-    } catch (e) {
-      // Handle error
+      final currentMessages = state.value ?? [];
+      state = AsyncValue.data([...currentMessages, newMessage]);
+    } catch (e, stack) {
+      // ✅ FIX CRITIQUE: Propager l'erreur au lieu de l'avaler silencieusement
+      // Restaurer l'état précédent pour ne pas perdre les messages affichés
+      state = previousState;
+      // Re-lancer l'erreur pour que l'UI puisse afficher un message d'erreur
+      throw AsyncValue.error(e, stack);
     }
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    await loadMessages();
   }
 }

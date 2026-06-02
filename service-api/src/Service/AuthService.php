@@ -102,8 +102,9 @@ class AuthService
 
         // Send email if mailer is available
         if ($this->mailer) {
-            $resetLink = "http://localhost/reset-password?token={$token}";
-            $emailMsg  = (new Email())
+            $frontendUrl = $_ENV['APP_FRONTEND_URL'] ?? 'http://localhost';
+            $resetLink   = "{$frontendUrl}/reset-password?token={$token}";
+            $emailMsg    = (new Email())
                 ->from('noreply@serviconnect.app')
                 ->to($user->getEmail())
                 ->subject('Réinitialisation de votre mot de passe')

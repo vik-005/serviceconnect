@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -20,20 +21,21 @@ class NotificationController extends AbstractController
     ) {}
 
     #[Route('', name: 'api_notifications_list', methods: ['GET'])]
-    public function list(): array
+    public function list(): JsonResponse
     {
         /** @var User $user */
-        $user = $this->getUser();
-        
-        return $this->notificationRepository->findBy(
+        $user          = $this->getUser();
+        $notifications = $this->notificationRepository->findBy(
             ['user' => $user],
             ['createdAt' => 'DESC'],
             20
         );
+
+        return $this->json($notifications);
     }
 
     #[Route('/{id}/read', name: 'api_notifications_read', methods: ['PATCH'])]
-    public function markAsRead(Notification $notification): array
+    public function markAsRead(Notification $notification): JsonResponse
     {
         if ($notification->getUser() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
@@ -42,6 +44,6 @@ class NotificationController extends AbstractController
         $notification->setIsRead(true);
         $this->entityManager->flush();
 
-        return ['message' => 'Notification marquée comme lue'];
+        return $this->json(['success' => true, 'message' => 'Notification marquée comme lue']);
     }
 }

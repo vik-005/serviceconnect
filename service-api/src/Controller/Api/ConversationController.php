@@ -34,7 +34,7 @@ class ConversationController extends AbstractController
 
         $conversations = $this->conversationRepository->findByUser($user);
 
-        return $this->json($conversations);
+        return $this->json($conversations, 200, [], ['groups' => ['conv:read']]);
     }
 
     #[Route('', name: 'api_conversations_create', methods: ['POST'])]

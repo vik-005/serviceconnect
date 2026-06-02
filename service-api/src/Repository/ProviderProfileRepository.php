@@ -89,7 +89,10 @@ class ProviderProfileRepository extends ServiceEntityRepository
 
         usort($formattedResults, fn($a, $b) => $a['distance_km'] <=> $b['distance_km']);
 
-        return array_slice($formattedResults, ($page - 1) * $limit, $limit);
+        return [
+            'results' => array_slice($formattedResults, ($page - 1) * $limit, $limit),
+            'total' => count($formattedResults)
+        ];
     }
 
     private function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
