@@ -131,6 +131,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> deleteAccount() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _dio.delete('/api/me');
+      await _storage.deleteAll();
+      state = AuthState();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> restoreSession() async {
     state = state.copyWith(isLoading: true);
     try {

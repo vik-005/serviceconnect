@@ -4,6 +4,7 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/auth/presentation/profile_screen.dart';
 
 // Placeholder screens for routes not yet fully implemented
 class ConversationsScreen extends StatelessWidget {
@@ -44,14 +45,6 @@ class ProviderDetailScreen extends StatelessWidget {
       );
 }
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('My Profile')),
-        body: const Center(child: Text('Profile Screen')),
-      );
-}
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});

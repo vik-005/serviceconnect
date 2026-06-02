@@ -94,6 +94,15 @@ class DioClient {
     return response.data;
   }
 
+  Future<dynamic> delete(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.delete(path, data: data, queryParameters: queryParameters);
+    return response.data;
+  }
+
   Future<FormData> createFormData(
     Map<String, dynamic> fields,
     Map<String, File> files,
