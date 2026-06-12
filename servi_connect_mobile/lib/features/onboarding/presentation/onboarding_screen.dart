@@ -215,6 +215,10 @@ class _OnboardingPageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final iconSize = (size.height * 0.10).clamp(60.0, 90.0);
+    final spacing = (size.height * 0.03).clamp(12.0, 36.0);
+
     return FadeTransition(
       opacity: fadeAnimation,
       child: Container(
@@ -224,87 +228,88 @@ class _OnboardingPageWidget extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               page.backgroundColor,
-              page.backgroundColor.withOpacity(0.7),
+              page.backgroundColor.withOpacity(0.85),
             ],
           ),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon with animation
-              ScaleTransition(
-                scale: fadeAnimation,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: page.iconColor.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+          child: SingleChildScrollView(
+            child: Container(
+              height: size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom - 130,
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ScaleTransition(
+                    scale: fadeAnimation,
+                    child: Container(
+                      width: iconSize + 40,
+                      height: iconSize + 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: page.iconColor.withOpacity(0.12),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    page.icon,
-                    size: 60,
-                    color: page.iconColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-              // Title
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.3),
-                  end: Offset.zero,
-                ).animate(fadeAnimation),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    page.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
+                      child: Icon(
+                        page.icon,
+                        size: iconSize,
+                        color: page.iconColor,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Description
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.3),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: fadeAnimation,
-                    curve: const Interval(0.2, 1.0),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    page.description,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                      height: 1.6,
+                  SizedBox(height: spacing * 1.5),
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.2),
+                      end: Offset.zero,
+                    ).animate(fadeAnimation),
+                    child: Text(
+                      page.title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.6,
+                        color: Color(0xFF111827),
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(height: spacing * 0.5),
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.2),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: fadeAnimation,
+                        curve: const Interval(0.2, 1.0),
+                      ),
+                    ),
+                    child: Text(
+                      page.description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF4B5563),
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+

@@ -22,39 +22,40 @@ final List<OnboardingPage> onboardingPages = [
     description:
         'Trouvez les meilleurs prestataires de services près de chez vous en quelques clics',
     icon: Icons.home_repair_service,
-    backgroundColor: const Color(0xFFE3F2FD),
-    iconColor: const Color(0xFF1976D2),
+    backgroundColor: const Color(0xFFEFF6FF), // Soft Blue
+    iconColor: const Color(0xFF2563EB), // Sky Blue
   ),
   OnboardingPage(
     title: 'Cherchez avec Facilité',
     description:
         'Parcourez des milliers de prestataires vérifiés et trouvez celui qui correspond à vos besoins',
-    icon: Icons.search,
-    backgroundColor: const Color(0xFFF3E5F5),
-    iconColor: const Color(0xFF7B1FA2),
+    icon: Icons.search_rounded,
+    backgroundColor: const Color(0xFFFFF7ED), // Soft Orange
+    iconColor: const Color(0xFFF97316), // Orange
   ),
   OnboardingPage(
     title: 'Communiquez Directement',
     description:
         'Messagerie instantanée, appels vidéo et partage de fichiers avec les prestataires',
-    icon: Icons.chat_bubble,
-    backgroundColor: const Color(0xFFE8F5E9),
-    iconColor: const Color(0xFF388E3C),
+    icon: Icons.chat_bubble_outline_rounded,
+    backgroundColor: const Color(0xFFF0FDFA), // Soft Cyan/Blue
+    iconColor: const Color(0xFF0D9488), // Cyan-Blue
   ),
   OnboardingPage(
     title: 'Paiements Sécurisés',
     description:
         'Transactions protégées et garanties pour votre tranquillité d\'esprit',
-    icon: Icons.security,
-    backgroundColor: const Color(0xFFFFF3E0),
-    iconColor: const Color(0xFFF57C00),
+    icon: Icons.gpp_good_rounded,
+    backgroundColor: const Color(0xFFFEF3C7), // Light Warm Orange
+    iconColor: const Color(0xFFD97706), // Warm Orange
   ),
   OnboardingPage(
     title: 'C\'est Parti !',
     description:
         'Créez votre compte et commencez à découvrir les meilleurs services',
-    icon: Icons.rocket_launch,
-    backgroundColor: const Color(0xFFCE93D8),
-    iconColor: const Color(0xFFE91E63),
+    icon: Icons.rocket_launch_rounded,
+    backgroundColor: const Color(0xFFECF2FF), // Indigo/Blue
+    iconColor: const Color(0xFF4F46E5), // Indigo
   ),
 ];
+

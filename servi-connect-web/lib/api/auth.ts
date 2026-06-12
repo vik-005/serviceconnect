@@ -32,3 +32,13 @@ export const updateProfile = async (userData: Partial<User>) => {
   const { data } = await api.patch<User>('/api/me', userData);
   return data;
 };
+
+export const forgotPassword = async (email: string) => {
+  const { data } = await api.post('/api/auth/forgot-password', { email });
+  return data;
+};
+
+export const resetPassword = async (token: string, password: string) => {
+  const { data } = await api.post('/api/auth/reset-password', { token, password });
+  return data;
+};

@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import 'widgets/provider_map_view.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -20,13 +21,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
   bool _showMap = false;
+  LatLng _userLocation = const LatLng(6.367, 2.45); // Default to Cotonou
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
-    if (_selectedCategory != null) {
-      _performSearch();
+    _initLocationAndSearch();
+  }
+
+  Future<void> _initLocationAndSearch() async {
+    await _getUserLocation();
+    _performSearch();
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (mounted) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
     }
   }
 
@@ -34,6 +65,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(searchProvidersProvider.notifier).search(
           category: _selectedCategory ?? '',
           keyword: _searchController.text.trim(),
+          latitude: _userLocation.latitude,
+          longitude: _userLocation.longitude,
         );
   }
 
@@ -89,7 +122,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 if (_showMap) {
                   return ProviderMapView(
                     providers: providers,
-                    userLocation: const LatLng(48.8566, 2.3522), // Default to Paris or user's GPS
+                    userLocation: _userLocation,
                     mapboxToken: ApiConstants.mapboxToken,
                   );
                 }

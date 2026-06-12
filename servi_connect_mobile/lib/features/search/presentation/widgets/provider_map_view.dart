@@ -45,7 +45,9 @@ class ProviderMapView extends StatelessWidget {
             // Providers
             ...providers.map(
               (p) => Marker(
-                point: LatLng(userLocation.latitude + (p.distance * 0.01), userLocation.longitude + (p.distance * 0.01)), // Fake lat/lng based on distance for demo since model lacks location
+                point: p.latitude != null && p.longitude != null
+                    ? LatLng(p.latitude!, p.longitude!)
+                    : LatLng(userLocation.latitude + (p.distance * 0.01), userLocation.longitude + (p.distance * 0.01)), // Fallback if no location data
                 width: 40,
                 height: 40,
                 child: GestureDetector(

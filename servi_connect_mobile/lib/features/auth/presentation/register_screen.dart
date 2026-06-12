@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/ui_helpers.dart';
 import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -55,22 +56,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
             role: _userRole,
-            country: _countryController.text,
+            country: _countryController.text.isEmpty ? 'BJ' : _countryController.text,
           );
 
       final authState = ref.read(authProvider);
       if (authState.error != null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authState.error!),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          UiHelpers.showSnackBar(context, authState.error!, isError: true);
         }
       } else if (authState.isAuthenticated) {
         if (mounted) {
-          context.go('/');
+          UiHelpers.showSnackBar(context, 'Compte créé avec succès ! Bienvenue 🎉', isError: false);
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) context.go('/');
         }
       }
     }

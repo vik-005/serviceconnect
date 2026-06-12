@@ -1,53 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/ui_helpers.dart';
-import 'package:go_router/go_router.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  const ResetPasswordScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _emailController;
+  late TextEditingController _tokenController;
   late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _tokenController = TextEditingController();
     _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _tokenController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
+      if (_passwordController.text != _confirmPasswordController.text) {
+        UiHelpers.showSnackBar(context, 'Les mots de passe ne correspondent pas', isError: true);
+        return;
+      }
+
+      final success = await ref.read(authProvider.notifier).resetPassword(
+            _tokenController.text.trim(),
             _passwordController.text.trim(),
           );
 
-      final authState = ref.read(authProvider);
-      if (authState.error != null) {
+      if (success) {
         if (mounted) {
-          UiHelpers.showSnackBar(context, authState.error!, isError: true);
+          UiHelpers.showSnackBar(
+            context,
+            'Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.',
+            isError: false,
+          );
+          // Naviguer vers la connexion
+          context.go('/login');
         }
-      } else if (authState.isAuthenticated) {
-        if (mounted) {
-          UiHelpers.showSnackBar(context, 'Connexion réussie ! Bienvenue 👋', isError: false);
-          await Future.delayed(const Duration(milliseconds: 600));
-          if (mounted) context.go('/');
+      } else {
+        final error = ref.read(authProvider).error;
+        if (mounted && error != null) {
+          UiHelpers.showSnackBar(context, error, isError: true);
         }
       }
     }
@@ -59,9 +71,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Stack(
         children: [
-          // Background decoration
           Positioned(
             top: -100,
             right: -100,
@@ -76,13 +95,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -90,68 +109,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: const Icon(
-                        Icons.shield,
+                        Icons.vpn_key_outlined,
                         size: 40,
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     const Text(
-                      'Bon retour !',
+                      'Nouveau mot de passe',
                       style: TextStyle(
-                        fontSize: 36,
+                        fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -1.5,
+                        letterSpacing: -1.2,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Connectez-vous pour continuer l\'aventure.',
+                      'Saisissez le code de réinitialisation reçu par email et votre nouveau mot de passe.',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
                     _buildTextField(
-                      controller: _emailController,
-                      label: 'Email ou Numéro de téléphone',
-                      hint: 'votre@email.com ou +229...',
-                      icon: Icons.alternate_email,
+                      controller: _tokenController,
+                      label: 'Code de réinitialisation (Token)',
+                      hint: 'Entrez le jeton reçu',
+                      icon: Icons.confirmation_number_outlined,
                       keyboardType: TextInputType.text,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ce champ est requis';
+                        }
+                        return null;
+                      },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildTextField(
                       controller: _passwordController,
-                      label: 'Mot de passe',
+                      label: 'Nouveau mot de passe',
                       hint: '••••••••',
-                      icon: Icons.lock,
+                      icon: Icons.lock_outline,
                       obscureText: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ce champ est requis';
+                        }
+                        if (value.length < 8) {
+                          return 'Le mot de passe doit faire au moins 8 caractères';
+                        }
+                        return null;
+                      },
                     ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          context.push('/forgot-password');
-                        },
-                        child: const Text(
-                          'Mot de passe oublié ?',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _confirmPasswordController,
+                      label: 'Confirmer le mot de passe',
+                      hint: '••••••••',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ce champ est requis';
+                        }
+                        return null;
+                      },
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: authState.isLoading ? null : _login,
+                        onPressed: authState.isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -165,36 +199,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: authState.isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
-                                'SE CONNECTER',
+                                'RÉINITIALISER',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1.2,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                           context.push('/register');
-                        },
-                        child: RichText(
-                          text: const TextSpan(
-                            text: 'Pas encore de compte ? ',
-                            style: TextStyle(color: AppColors.textSecondary),
-                            children: [
-                              TextSpan(
-                                text: 'S\'inscrire',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -213,7 +224,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required String hint,
     required IconData icon,
     bool obscureText = false,
-    TextInputType? keyboardType,
+    required TextInputType keyboardType,
+    required String? Function(String?) validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,12 +265,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Ce champ est requis';
-            }
-            return null;
-          },
+          validator: validator,
         ),
       ],
     );

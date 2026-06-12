@@ -87,10 +87,10 @@ class AuthService
         return $this->buildAuthResponse($user, 'Connexion réussie');
     }
 
-    public function forgotPassword(string $email): void
+    public function forgotPassword(string $emailOrPhone): void
     {
-        $user = $this->userRepository->findOneBy(['email' => $email]);
-        // Silent fail: do not reveal whether email exists
+        $user = $this->userRepository->findByEmailOrPhone($emailOrPhone);
+        // Silent fail: do not reveal whether user exists
         if (!$user) {
             return;
         }
@@ -100,8 +100,13 @@ class AuthService
         $user->setResetTokenExpiresAt(new \DateTime('+1 hour'));
         $this->entityManager->flush();
 
-        // Send email if mailer is available
-        if ($this->mailer) {
+        // Envoi SMS simulé si l'identifiant n'est pas un email
+        if (!filter_var($emailOrPhone, FILTER_VALIDATE_EMAIL)) {
+            $this->activityLogger->log('SMS_PASSWORD_RESET_TOKEN', 'User', $user->getId()->toString(), [
+                'phone' => $user->getPhone(),
+                'token' => $token
+            ], $user);
+        } else if ($this->mailer && $user->getEmail()) {
             $frontendUrl = $_ENV['APP_FRONTEND_URL'] ?? 'http://localhost';
             $resetLink   = "{$frontendUrl}/reset-password?token={$token}";
             $emailMsg    = (new Email())

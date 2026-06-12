@@ -103,6 +103,15 @@ class DioClient {
     return response.data;
   }
 
+  Future<dynamic> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.patch(path, data: data, queryParameters: queryParameters);
+    return response.data;
+  }
+
   Future<FormData> createFormData(
     Map<String, dynamic> fields,
     Map<String, File> files,

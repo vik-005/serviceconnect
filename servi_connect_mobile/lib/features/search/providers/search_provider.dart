@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/provider_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 // Provider model
 class ServiceProvider {
@@ -27,17 +29,41 @@ class ServiceProvider {
     this.latitude,
     this.longitude,
   });
+
+  /// Factory constructor to map API JSON response to ServiceProvider
+  factory ServiceProvider.fromJson(Map<String, dynamic> json) {
+    final categories = json['categories'] as List?;
+    final categoryName = (categories != null && categories.isNotEmpty)
+        ? (categories.first['name'] as String? ?? '')
+        : '';
+    final location = json['location'] as Map<String, dynamic>?;
+
+    return ServiceProvider(
+      id: json['id']?.toString() ?? '',
+      name: '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim(),
+      avatar: json['avatarUrl'] as String?,
+      category: categoryName,
+      rating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
+      reviewCount: json['reviewCount'] as int? ?? 0,
+      description: json['bio'] as String? ?? '',
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      verified: json['isVerified'] as bool? ?? false,
+      latitude: (location?['lat'] as num?)?.toDouble(),
+      longitude: (location?['lng'] as num?)?.toDouble(),
+    );
+  }
 }
 
 // Search Provider
 final searchProvidersProvider = StateNotifierProvider<SearchProvidersNotifier,
     AsyncValue<List<ServiceProvider>>>((ref) {
-  return SearchProvidersNotifier();
+  return SearchProvidersNotifier(ref);
 });
 
 class SearchProvidersNotifier
     extends StateNotifier<AsyncValue<List<ServiceProvider>>> {
-  SearchProvidersNotifier() : super(const AsyncValue.data([]));
+  final Ref _ref;
+  SearchProvidersNotifier(this._ref) : super(const AsyncValue.data([]));
 
   Future<void> search({
     required String category,
@@ -48,24 +74,31 @@ class SearchProvidersNotifier
   }) async {
     state = const AsyncValue.loading();
     try {
-      // TODO: Search providers from API
-      // final dioClient = DioClient();
-      // final response = await dioClient.get(
-      //   ApiConstants.providerSearch,
-      //   queryParameters: {
-      //     'category': category,
-      //     'keyword': keyword,
-      //     'latitude': latitude,
-      //     'longitude': longitude,
-      //     'radius': radiusKm,
-      //   },
-      // );
-      // final providers = (response['data'] as List)
-      //   .map((json) => ServiceProvider.fromJson(json))
-      //   .toList();
-      state = const AsyncValue.data([]);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      final token = _ref.read(authProvider).token;
+      if (token == null) {
+        throw Exception('User is not authenticated');
+      }
+
+      final providerService = _ref.read(providerServiceProvider);
+      // Backend expects radius in meters: convert km to meters
+      final radiusMeters = (radiusKm * 1000).toInt();
+
+      final responseList = await providerService.searchProviders(
+        token,
+        keyword: keyword,
+        category: category.isNotEmpty ? category : null,
+        latitude: latitude,
+        longitude: longitude,
+        distance: radiusMeters.toDouble(),
+      );
+
+      final providers = responseList
+          .map((json) => ServiceProvider.fromJson(json))
+          .toList();
+
+      state = AsyncValue.data(providers);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
     }
   }
 
@@ -77,11 +110,11 @@ class SearchProvidersNotifier
 // Provider detail Provider
 final providerDetailProvider =
     FutureProvider.family<ServiceProvider?, String>((ref, providerId) async {
-  // TODO: Load provider details from API
-  // final dioClient = DioClient();
-  // final response = await dioClient.get(
-  //   ApiConstants.providerDetail.replaceFirst('{id}', providerId),
-  // );
-  // return ServiceProvider.fromJson(response['data']);
-  return null;
+  final token = ref.read(authProvider).token;
+  if (token == null) return null;
+
+  final providerService = ref.read(providerServiceProvider);
+  final json = await providerService.getProviderDetail(token, providerId);
+  return ServiceProvider.fromJson(json);
 });
+

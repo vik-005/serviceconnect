@@ -48,21 +48,32 @@ export default function LoginPage() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
-            label="Email"
-            type="email"
+            label="Email ou Numéro de téléphone"
+            type="text"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             error={errors.email}
             required
           />
-          <Input
-            label="Mot de passe"
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            error={errors.password}
-            required
-          />
+          <div className="space-y-1">
+            <Input
+              label="Mot de passe"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              error={errors.password}
+              required
+            />
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => router.push('/forgot-password')}
+                className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+          </div>
           <Button type="submit" isLoading={isLoggingIn} className="h-12 text-lg w-full">
             Se connecter
           </Button>

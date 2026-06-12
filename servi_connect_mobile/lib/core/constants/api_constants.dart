@@ -1,24 +1,14 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstants {
-  // API Base URLs - Use environment variables or defaults
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://web.motiriispace.com',
-  );
+  // API Base URLs - Use environment variables loaded dynamically at runtime via flutter_dotenv
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'https://web.motiriispace.com';
 
-  static const String mercureUrl = String.fromEnvironment(
-    'MERCURE_URL',
-    defaultValue: 'https://web.motiriispace.com/.well-known/mercure',
-  );
+  static String get mercureUrl => dotenv.env['MERCURE_URL'] ?? 'https://web.motiriispace.com/.well-known/mercure';
 
-  static const String uploadsUrl = String.fromEnvironment(
-    'UPLOADS_BASE_URL',
-    defaultValue: 'https://web.motiriispace.com/uploads',
-  );
+  static String get uploadsUrl => dotenv.env['UPLOADS_BASE_URL'] ?? 'https://web.motiriispace.com/uploads';
 
-  static const String mapboxToken = String.fromEnvironment(
-    'MAPBOX_TOKEN',
-    defaultValue: '',
-  );
+  static String get mapboxToken => dotenv.env['MAPBOX_TOKEN'] ?? '';
 
   // Auth
   static const String register = '/api/auth/register';
@@ -27,6 +17,8 @@ class ApiConstants {
   static const String logout = '/api/auth/logout';
   static const String profile = '/api/auth/profile';
   static const String updateProfile = '/api/auth/profile';
+  static const String forgotPassword = '/api/auth/forgot-password';
+  static const String resetPassword = '/api/auth/reset-password';
 
   // Banners
   static const String banners = '/api/banners';

@@ -68,15 +68,17 @@ class AuthController extends AbstractController
     public function forgotPassword(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        if (empty($data['email'])) {
-            throw new BadRequestHttpException('Email obligatoire');
+        $identifier = $data['email'] ?? $data['emailOrPhone'] ?? $data['phone'] ?? null;
+        
+        if (empty($identifier)) {
+            throw new BadRequestHttpException('Identifiant (email ou téléphone) obligatoire');
         }
 
-        $this->authService->forgotPassword($data['email']);
+        $this->authService->forgotPassword($identifier);
 
         return $this->json([
             'success' => true,
-            'message' => 'Si un compte existe pour cet email, un lien de réinitialisation a été envoyé',
+            'message' => 'Si un compte existe, les instructions de réinitialisation ont été envoyées',
         ]);
     }
 

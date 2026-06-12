@@ -1,53 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/ui_helpers.dart';
-import 'package:go_router/go_router.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _emailController;
-  late TextEditingController _passwordController;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController();
-    _passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authProvider.notifier).login(
+      final success = await ref.read(authProvider.notifier).forgotPassword(
             _emailController.text.trim(),
-            _passwordController.text.trim(),
           );
 
-      final authState = ref.read(authProvider);
-      if (authState.error != null) {
+      if (success) {
         if (mounted) {
-          UiHelpers.showSnackBar(context, authState.error!, isError: true);
+          UiHelpers.showSnackBar(
+            context,
+            'Si un compte existe, les instructions de réinitialisation ont été envoyées.',
+            isError: false,
+          );
+          // Rediriger vers l'écran de réinitialisation
+          context.push('/reset-password');
         }
-      } else if (authState.isAuthenticated) {
-        if (mounted) {
-          UiHelpers.showSnackBar(context, 'Connexion réussie ! Bienvenue 👋', isError: false);
-          await Future.delayed(const Duration(milliseconds: 600));
-          if (mounted) context.go('/');
+      } else {
+        final error = ref.read(authProvider).error;
+        if (mounted && error != null) {
+          UiHelpers.showSnackBar(context, error, isError: true);
         }
       }
     }
@@ -59,9 +59,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Stack(
         children: [
-          // Background decoration
           Positioned(
             top: -100,
             right: -100,
@@ -76,13 +83,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -90,68 +97,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: const Icon(
-                        Icons.shield,
+                        Icons.lock_reset,
                         size: 40,
                         color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 32),
                     const Text(
-                      'Bon retour !',
+                      'Mot de passe oublié ?',
                       style: TextStyle(
-                        fontSize: 36,
+                        fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -1.5,
+                        letterSpacing: -1.2,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Connectez-vous pour continuer l\'aventure.',
+                      'Pas de panique ! Entrez votre adresse e-mail ou votre numéro de téléphone ci-dessous et nous vous enverrons les instructions pour réinitialiser votre mot de passe.',
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
+                        height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 40),
                     _buildTextField(
                       controller: _emailController,
                       label: 'Email ou Numéro de téléphone',
                       hint: 'votre@email.com ou +229...',
                       icon: Icons.alternate_email,
                       keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 24),
-                    _buildTextField(
-                      controller: _passwordController,
-                      label: 'Mot de passe',
-                      hint: '••••••••',
-                      icon: Icons.lock,
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          context.push('/forgot-password');
-                        },
-                        child: const Text(
-                          'Mot de passe oublié ?',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Veuillez saisir votre identifiant';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 40),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: authState.isLoading ? null : _login,
+                        onPressed: authState.isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -165,36 +154,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: authState.isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
-                                'SE CONNECTER',
+                                'ENVOYER LE LIEN',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1.2,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                           context.push('/register');
-                        },
-                        child: RichText(
-                          text: const TextSpan(
-                            text: 'Pas encore de compte ? ',
-                            style: TextStyle(color: AppColors.textSecondary),
-                            children: [
-                              TextSpan(
-                                text: 'S\'inscrire',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -212,8 +178,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required String label,
     required String hint,
     required IconData icon,
-    bool obscureText = false,
-    TextInputType? keyboardType,
+    required TextInputType keyboardType,
+    required String? Function(String?) validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +196,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 10),
         TextFormField(
           controller: controller,
-          obscureText: obscureText,
           keyboardType: keyboardType,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           decoration: InputDecoration(
@@ -253,12 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Ce champ est requis';
-            }
-            return null;
-          },
+          validator: validator,
         ),
       ],
     );
